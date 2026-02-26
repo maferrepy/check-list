@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+<meta charset="UTF-8">
+<title>Sistema Financeiro - Hamburgueria Trailer</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+body{
+    font-family: Arial, sans-serif;
+    background:#0f0f0f;
+    color:#fff;
+    padding:20px;
+}
+h1{
+    text-align:center;
+    color:#ff9800;
+}
+h2{
+    color:#ff9800;
+    margin-top:40px;
+}
+table{
+    width:100%;
+    border-collapse: collapse;
+    margin-bottom:20px;
+    background:#1c1c1c;
+}
+th, td{
+    border:1px solid #333;
+    padding:8px;
+}
+th{
+    background:#222;
+}
+input[type="number"]{
+    width:120px;
+    padding:5px;
+}
+.resumo{
+    background:#1c1c1c;
+    padding:20px;
+    margin-top:20px;
+    border-radius:8px;
+}
+.destaque{
+    font-size:20px;
+    color:#4caf50;
+}
+canvas{
+    background:#fff;
+    margin-top:20px;
+}
+button{
+    padding:10px 15px;
+    background:#ff9800;
+    border:none;
+    cursor:pointer;
+    font-weight:bold;
+}
+</style>
+</head>
+<body>
+
+<h1>🔥 Sistema Financeiro - Hamburgueria By Ferreira</h1>
+
+<div id="checklist"></div>
+
+<div class="resumo">
+    <h2>📊 Resumo Financeiro</h2>
+    Total Investido: <span class="destaque">R$ <span id="total">0.00</span></span><br><br>
+
+    Meta de Lucro Mensal (R$):
+    <input type="number" id="lucroMensal" oninput="calcularROI()"><br><br>
+
+    📈 Previsão de Retorno:
+    <span class="destaque"><span id="roi">0</span> meses</span>
+</div>
+
+<h2>📊 Gráfico de Gastos</h2>
+<canvas id="grafico" height="100"></canvas>
+
+<script>
+
+const categorias = {
+    "Equipamentos": ["Coifa", "Botijão Reserva", "Extintor", "Balança"],
+    "Estrutura Externa": ["2 Jogos de Mesa", "4 Bancos sem Encosto", "2 Wind Banners"],
+    "Utensílios": ["Espátulas", "Facas", "Tábuas", "Cubas"],
+    "Embalagens": ["Caixa Hambúrguer", "Sacolas", "Guardanapos","saco kraft", "papel termico"],
+    "Estoque Inicial": ["Hamburguer Angus", "Pão", "Queijo", "Bacon", "Alface", "Tomate", "Cebola", "Picles", "Milho", "Óleo"],
+    "Molhos": ["Ketchup", "Mostarda", "Maionese", "Maionese Verde", "Molho Abacaxi"],
+    "Marketing": ["Logo", "Cardápio", "Placa", "Redes Sociais"],
+    "Legalização": ["Falar com Alex", "falar com Dirlei", "Maquininha"]
+};
+
+const container = document.getElementById("checklist");
+
+for (let categoria in categorias) {
+
+    const titulo = document.createElement("h2");
+    titulo.innerText = categoria;
+    container.appendChild(titulo);
+
+    const table = document.createElement("table");
+    table.innerHTML = `
+        <tr>
+            <th>✔</th>
+            <th>Item</th>
+            <th>Valor (R$)</th>
+        </tr>
+    `;
+
+    categorias[categoria].forEach(item => {
+        const row = document.createElement("tr");
+        row.innerHTML = `
+            <td><input type="checkbox"></td>
+            <td>${item}</td>
+            <td><input type="number" step="0.01" data-categoria="${categoria}" oninput="calcularTotal()"></td>
+        `;
+        table.appendChild(row);
+    });
+
+    container.appendChild(table);
+}
+
+function calcularTotal(){
+    let total = 0;
+    let somaCategorias = {};
+
+    document.querySelectorAll("input[type='number'][data-categoria]").forEach(input => {
+        let valor = parseFloat(input.value);
+        if(!isNaN(valor)){
+            total += valor;
+            let cat = input.dataset.categoria;
+            somaCategorias[cat] = (somaCategorias[cat] || 0) + valor;
+        }
+    });
+
+    document.getElementById("total").innerText = total.toFixed(2);
+    localStorage.setItem("dadosHamburgueria", JSON.stringify([...document.querySelectorAll("input")].map(i => i.value)));
+
+    atualizarGrafico(somaCategorias);
+    calcularROI();
+}
+
+function calcularROI(){
+    let total = parseFloat(document.getElementById("total").innerText);
+    let lucro = parseFloat(document.getElementById("lucroMensal").value);
+
+    if(!isNaN(total) && !isNaN(lucro) && lucro > 0){
+        document.getElementById("roi").innerText = (total / lucro).toFixed(1);
+    }
+}
+
+let ctx = document.getElementById('grafico').getContext('2d');
+let grafico = new Chart(ctx, {
+    type: 'bar',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Gastos por Categoria',
+            data: []
+        }]
+    }
+});
+
+function atualizarGrafico(somaCategorias){
+    grafico.data.labels = Object.keys(somaCategorias);
+    grafico.data.datasets[0].data = Object.values(somaCategorias);
+    grafico.update();
+}
+
+window.onload = function(){
+    let dados = JSON.parse(localStorage.getItem("dadosHamburgueria"));
+    if(dados){
+        document.querySelectorAll("input").forEach((input, index) => {
+            input.value = dados[index];
+        });
+        calcularTotal();
+    }
+}
+
+</script>
+
+</body>
+</html>
